@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add New Book - Book Barter</title>
+  <link rel="stylesheet" href="add-book.css">
+</head>
+<body>
+  <div class="container">
+    <a href="mybook.html" class="back-link">← Back to My Books</a>
+    <h1>Add New Book</h1>
+    <p class="subtitle">Share your book with the community</p>
+
+    <div class="form-container">
+      <!-- Book Cover Upload -->
+      <div class="form-box">
+        <h2>Book Cover</h2>
+        <div class="upload-box" id="uploadBox">
+          <input type="file" id="bookCover" accept="image/*">
+          <p>Upload book cover</p>
+          <small>JPG, PNG up to 5MB</small>
+          <img id="preview" class="preview" src="" alt="">
+        </div>
+      </div>
+
+      <!-- Book Details -->
+      <div class="form-box">
+        <h2>Book Details</h2>
+        <form id="addBookForm">
+          <label>Book Title *</label>
+          <input type="text" id="title" required placeholder="Enter the book title">
+
+          <label>Author *</label>
+          <input type="text" id="author" required placeholder="Enter author name">
+
+          <label>Genre *</label>
+          <select id="genre" required>
+            <option value="">Select a genre</option>
+            <option>Academic</option>
+            <option>Fantasy</option>
+            <option>Mystery</option>
+            <option>Horror</option>
+            <option>Romance</option>
+            <option>Science Fiction</option>
+            <option>Biography</option>
+          </select>
+
+          <label>Book Condition *</label>
+          <select id="condition" required>
+            <option value="">Select condition</option>
+            <option>New</option>
+            <option>Like New</option>
+            <option>Used</option>
+            <option>Old</option>
+          </select>
+
+          <h2 class="section-heading">Additional Information</h2>
+
+          <label>Description</label>
+          <textarea id="description" rows="4" placeholder="Tell others about this book..."></textarea>
+
+          <label>Status</label>
+<select id="status" required>
+  <option value="AVAILABLE">Available</option>
+  <option value="RENTED">Rented</option>
+</select>
+
+
+          <div class="form-actions">
+            <button type="button" class="cancel-btn" onclick="window.location.href='mybook.html'">Cancel</button>
+            <button type="submit" class="btn">Add Book to My Collection</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+<input type="file" id="cover" accept="image/*">
+
+<script>
+const bookCover = document.getElementById("bookCover");
+const preview = document.getElementById("preview");
+
+let base64Image = "";
+
+document.getElementById("bookCover").addEventListener("change", function () {
+  const file = this.files[0];
+
+  if (!file) return;
+
+  if (file.size > 5 * 1024 * 1024) {
+    alert("Image must be less than 5MB");
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    base64Image = reader.result;
+    document.getElementById("preview").src = base64Image;
+  };
+  reader.readAsDataURL(file);
+});
+
+// Submit form
+document.getElementById("addBookForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const user = JSON.parse(localStorage.getItem("loggedInUser"));
+  if (!user) {
+    alert("Please login first");
+    return;
+  }
+
+  const bookData = {
+  title: title.value,
+  author: author.value,
+  genre: genre.value,
+  condition: condition.value,
+  description: description.value,
+  status: status.value,   // ✅ CORRECT
+  coverImage: base64Image,
+  userId: user._id
+};
+
+
+
+  const res = await fetch("http://localhost:3000/add-book", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(bookData)
+  });
+
+  const data = await res.json();
+
+  if (data.success) {
+    alert("✅ Book added successfully");
+    window.location.href = "mybook.html";
+  } else {
+    alert("❌ Error adding book");
+  }
+});
+</script>
+
+
+
+
+</body>
+</html>

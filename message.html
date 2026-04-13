@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Chat - Book Barter</title>
+  <link rel="stylesheet" href="message.css"/>
+</head>
+
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <img src="logo image.jpg" alt="Book Barter Logo" class="logo-img" style="width:40px; vertical-align:middle;">
+    <span style="margin-left:8px;">Book Barter</span>
+  <nav>
+    <ul>
+      <li><a href="dashboard.html">Dashboard</a></li>
+      <li><a href="mybook.html">My Books</a></li>
+      <li><a href="transactions.html">Records</a></li>
+      <li><a href="message.html" class="active">Chat</a></li>
+      <li><a href="profile.html">Profile</a></li>
+      <li id="logoutBtn">Logout</li>
+    </ul>
+  </nav>
+</aside>
+
+<div class="chat-wrapper">
+
+  <!-- LEFT -->
+  <div class="n-sidebar">
+    <div class="chat-tabs">
+      <button id="chatTab" class="active">Chats</button>
+      <button id="requestTab">
+        Requests <span id="requestCount">0</span>
+      </button>
+    </div>
+
+    <div class="search-box">
+      <input type="text" placeholder="🔍 Search..." onkeyup="filterUsers(event)">
+    </div>
+
+    <div class="user-list" id="chatList"></div>
+    <div class="user-list hidden" id="requestList"></div>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="chat-area">
+    <div class="chat-header" id="chatUser">Select a user</div>
+    <div class="messages-box" id="messages"></div>
+
+    <div class="input-bar">
+      <input id="msgText" placeholder="Type message...">
+      <button onclick="sendMessage()">Send</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const currentUser = JSON.parse(localStorage.getItem("loggedInUser"));
+if (!currentUser) location.href = "login.html";
+
+document.getElementById("logoutBtn").onclick = () => {
+  localStorage.clear();
+  location.href = "login.html";
+};
+
+const chatList = document.getElementById("chatList");
+const requestList = document.getElementById("requestList");
+const chatTab = document.getElementById("chatTab");
+const requestTab = document.getElementById("requestTab");
+const requestCount = document.getElementById("requestCount");
+const messagesBox = document.getElementById("messages");
+const msgText = document.getElementById("msgText");
+const chatUserHeader = document.getElementById("chatUser");
+
+let activeChatUser = "";
+let activeChatName = "";
+let requestCache = [];
+
+/* ================= TAB SWITCH ================= */
+chatTab.onclick = () => {
+  chatTab.classList.add("active");
+  requestTab.classList.remove("active");
+  chatList.classList.remove("hidden");
+  requestList.classList.add("hidden");
+};
+
+requestTab.onclick = () => {
+  requestTab.classList.add("active");
+  chatTab.classList.remove("active");
+  requestList.classList.remove("hidden");
+  chatList.classList.add("hidden");
+};
+
+/* ================= LOAD REQUESTS ================= */
+async function loadRequests() {
+  const res = await fetch(
+    `http://localhost:3000/chat-requests/${currentUser._id}`
+  );
+  const data = await res.json();
+
+  requestCache = data;
+  requestCount.textContent = data.length;
+  requestList.innerHTML = "";
+
+  data.forEach((r, i) => {
+    requestList.innerHTML += `
+      <div class="user-item request-item" onclick="openRequest(${i})">
+        <span class="user-name">${r.fromUser.name}</span>
+        <small style="color:orange">Pending</small>
+      </div>
+    `;
+  });
+}
+
+/* ================= OPEN REQUEST ================= */
+function openRequest(index) {
+  const r = requestCache[index];
+
+  chatUserHeader.innerHTML = `
+    ${r.fromUser.name}
+    <span style="color:#f59e0b;font-size:13px;"> • Pending</span>
+  `;
+
+  messagesBox.innerHTML = `
+    <div class="exchange-wrapper">
+      <div class="exchange-card">
+
+        <div class="exchange-icon">👤+</div>
+
+        <div class="exchange-title">New Exchange Request</div>
+        <div class="exchange-sub">
+          Review this request and decide
+        </div>
+
+        <div class="book-box">
+          <small>THEY WANT YOUR BOOK</small>
+          <h4>${r.requestedBook.title}</h4>
+          <p>${r.requestedBook.author}</p>
+        </div>
+
+        <div class="exchange-date">
+          Requested on ${new Date(r.createdAt).toLocaleDateString()}
+        </div>
+
+        <div class="exchange-actions">
+          <button class="accept-btn"
+            onclick="acceptRequest('${r._id}')">
+            ✓ Accept Request
+          </button>
+
+          <button class="decline-btn"
+            onclick="declineRequest('${r._id}')">
+            ✕ Decline
+          </button>
+        </div>
+
+      </div>
+    </div>
+  `;
+
+  msgText.disabled = true;
+}
+
+/* ================= ACCEPT / DECLINE ================= */
+async function acceptRequest(id) {
+  try {
+    const res = await fetch(`http://localhost:3000/accept-request/${id}`, {
+      method: "POST"
+    });
+
+    const data = await res.json();
+
+    if (!res.ok || !data.success) {
+      alert(data.message || "Error accepting request");
+      return;
+    }
+
+    // Reload both lists
+    await loadRequests();
+    await loadChats();
+
+    // Switch to Chats tab
+    chatTab.click();
+
+    // Reset UI
+    chatUserHeader.textContent = "Select a user";
+    messagesBox.innerHTML = "";
+    msgText.disabled = true;
+
+  } catch (err) {
+    console.error(err);
+    alert("Network error while accepting request");
+  }
+}
+/* ================= LOAD CHATS ================= */
+async function loadChats() {
+  const res = await fetch(
+    `http://localhost:3000/chats/${currentUser._id}`
+  );
+  const chats = await res.json();
+
+  chatList.innerHTML = "";
+
+  chats.forEach(c => {
+    const user =
+      c.fromUser._id === currentUser._id ? c.toUser : c.fromUser;
+
+    chatList.innerHTML += `
+  <div class="user-item chat-item"
+    onclick="openChat('${user._id}','${user.name}')">
+
+    <span class="user-name">${user.name}</span>
+
+    <button class="delete-chat-btn"
+      onclick="event.stopPropagation(); deleteChat('${user._id}')">
+      🗑
+    </button> 
+  </div>
+`;
+
+  });
+}
+
+/* ================= OPEN CHAT ================= */
+async function openChat(id, name) {
+  activeChatUser = id;
+  activeChatName = name;
+  chatUserHeader.textContent = name;
+
+  const res = await fetch(
+    `http://localhost:3000/messages/${currentUser._id}/${id}`
+  );
+  const msgs = await res.json();
+
+  messagesBox.innerHTML = "";
+  msgText.disabled = false;
+
+  msgs.forEach(m => {
+    messagesBox.innerHTML += `
+      <div class="msg ${m.sender === currentUser._id ? "me" : "other"}">
+        ${m.text}
+      </div>
+    `;
+  });
+
+  messagesBox.scrollTop = messagesBox.scrollHeight;
+}
+
+/* ================= SEND MESSAGE ================= */
+async function sendMessage() {
+  const text = msgText.value.trim();
+  if (!text || !activeChatUser) return;
+
+  await fetch("http://localhost:3000/send-message", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      sender: currentUser._id,
+      receiver: activeChatUser,
+      text
+    })
+  });
+
+  msgText.value = "";
+  openChat(activeChatUser, activeChatName);
+}
+
+/* ================= DELETE CHAT ================= */
+async function deleteChat(otherUserId) {
+  if (!confirm("Delete this chat permanently?")) return;
+
+  await fetch(
+    `http://localhost:3000/delete-chat/${currentUser._id}/${otherUserId}`,
+    { method: "DELETE" }
+  );
+
+  messagesBox.innerHTML = "";
+  chatUserHeader.textContent = "Select a user";
+  loadChats();
+}
+
+/* ================= SEARCH (FIXED) ================= */
+function filterUsers(e) {
+  const value = e.target.value.toLowerCase();
+
+  document.querySelectorAll(".chat-item").forEach(item => {
+    item.style.display =
+      item.textContent.toLowerCase().includes(value)
+        ? "flex"
+        : "none";
+  });
+}
+
+/* ================= INIT ================= */
+loadChats();
+loadRequests();
+</script>
+
+</body>
+</html>

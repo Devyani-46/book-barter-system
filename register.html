@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register - Book Barter</title>
+  <link rel="stylesheet" href="login.css">
+</head>
+<body>
+  <div class="auth-container">
+    <div class="auth-box">
+      <h1>Register</h1>
+      <p class="subtitle">Create your account</p>
+
+      <form id="registerForm">
+        <label>Full name</label>
+        <input 
+          type="text" 
+          id="fullname" 
+          placeholder="Enter your full name" 
+          required
+          oninput="allowOnlyLetters(this)"
+        >
+
+        <label>Email address</label>
+        <input 
+          type="email" 
+          id="email" 
+          placeholder="Enter your email" 
+          required
+        >
+
+        <label>Password</label>
+        <input 
+          type="password" 
+          id="password" 
+          placeholder="Create a password" 
+          required
+        >
+
+        <label>Confirm password</label>
+        <input 
+          type="password" 
+          id="confirmPassword" 
+          placeholder="Confirm your password" 
+          required
+        >
+
+        <button type="submit" class="btn">Register</button>
+      </form>
+
+      <p class="small">
+        Already have an account? <a href="login.html">Sign in here</a>
+      </p>
+      <p class="small"><a href="index.html">← Back to home</a></p>
+    </div>
+  </div>
+
+  <script>
+    function allowOnlyLetters(input) {
+      input.value = input.value.replace(/[^A-Za-z\s]/g, '');
+    }
+
+    document.getElementById("registerForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+
+      const name = document.getElementById("fullname").value.trim();
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
+      const confirmPassword = document.getElementById("confirmPassword").value;
+
+      
+      if (name.length === 0) {
+        alert("Name cannot be empty");
+        return;
+      }
+
+     
+      const gmailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
+      if (!gmailRegex.test(email)) {
+        alert("Email must be a valid Gmail address ending with @gmail.com");
+        return;
+      }
+
+      
+      if (password.length < 8) {
+        alert("Password must be at least 8 characters long");
+        return;
+      }
+
+    
+      if (password !== confirmPassword) {
+        alert("Passwords do not match!");
+        return;
+      }
+
+      try {
+        const response = await fetch("http://localhost:3000/register", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ name, email, password })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          alert("Registration successful! Please login.");
+          window.location.href = "login.html";
+        } else {
+          alert(data.message);
+        }
+      } catch (error) {
+        alert("Server not responding. Make sure backend is running.");
+      }
+    });
+  </script>
+
+</body>
+</html>

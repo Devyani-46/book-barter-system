@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Admin Reports</title>
+  <link rel="stylesheet" href="admin-dashboard.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<style>
+.main h1 {
+  margin-bottom: 20px;
+  color: #1e1e2f;
+}
+
+/* Card container */
+.card-container {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 30px;
+}
+
+.card {
+  flex: 1 1 200px;
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  text-align: center;
+}
+
+.card h2 {
+  font-size: 32px;
+  margin: 10px 0;
+  color: #1e1e2f;
+}
+
+.card p {
+  margin: 0;
+  color: #666;
+}
+
+/* Table styling */
+#reportTable {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  margin-bottom: 30px;
+}
+
+#reportTable th, #reportTable td {
+  padding: 12px 15px;
+  text-align: left;
+}
+
+#reportTable th {
+  background: #1e1e2f;
+  color: white;
+}
+
+#reportTable tr:nth-child(even) {
+  background: #f7f7f7;
+}
+
+#reportTable tr:hover {
+  background: #eaeaea;
+}
+
+/* Chart container */
+.chart-container {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  margin-bottom: 30px;
+}
+</style>
+
+<body>
+<aside class="sidebar">
+  <img src="logo image.jpg" alt="Book Barter Logo" class="logo-img" style="width:40px; vertical-align:middle;">
+  <span style="margin-left:8px;">Book Barter Admin</span>
+  <nav>
+    <ul>
+      <li><a href="admin-dashboard.html">Dashboard</a></li>
+      <li><a href="admin-users.html">Users</a></li>
+      <li><a href="admin-books.html">All Books</a></li>
+      <li><a href="admin-reports.html" class="active">Reports</a></li>
+      <li id="logoutBtn" class="logout-link">Logout</li>
+    </ul>
+  </nav>
+</aside>
+
+<div class="main">
+  <h1>Reports</h1>
+
+  <!-- Summary cards -->
+  <div class="card-container">
+    <div class="card">
+      <p>Total Users</p>
+      <h2 id="totalUsers">0</h2>
+    </div>
+    <div class="card">
+      <p>Total Books</p>
+      <h2 id="totalBooks">0</h2>
+    </div>
+    <div class="card">
+      <p>Total Transactions</p>
+      <h2 id="totalTransactions">0</h2>
+    </div>
+  </div>
+
+  <!-- Recent activity table -->
+  <h2>Recent Rent / Return Activity</h2>
+  <table id="reportTable">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Action</th>
+        <th>User</th>
+        <th>Book</th>
+        <th>Date</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <!-- Date-wise chart -->
+  <div class="chart-container">
+    <h2>Date-wise Rent / Return Report</h2>
+    <canvas id="dateChart" height="100"></canvas>
+  </div>
+</div>
+
+<script>
+if(localStorage.getItem("adminLoggedIn")!=="true"){
+  window.location.href="admin-login.html";
+}
+
+const tbody = document.querySelector("#reportTable tbody");
+
+async function loadReports() {
+  try {
+    const res = await fetch("/api/admin/reports");
+    const data = await res.json();
+
+    // Summary cards
+    document.getElementById("totalUsers").innerText = data.totalUsers;
+    document.getElementById("totalBooks").innerText = data.totalBooks;
+    document.getElementById("totalTransactions").innerText = data.totalTransactions;
+
+    // Recent activity table
+    tbody.innerHTML = "";
+    data.recentActivity.forEach((tx, index) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${index + 1}</td>
+        <td>${tx.action || tx.actionType || "N/A"}</td>
+        <td>${tx.userId ? tx.userId.name : "N/A"}</td>
+        <td>${tx.bookId ? tx.bookId.title : "N/A"}</td>
+        <td>${new Date(tx.date).toLocaleString()}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    // Date-wise chart
+    const labels = data.dateWiseReport.map(r => r._id);
+    const rentedData = data.dateWiseReport.map(r => r.rented || 0);
+    const returnedData = data.dateWiseReport.map(r => r.returned || 0);
+
+    const ctx = document.getElementById("dateChart").getContext("2d");
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels.reverse(),
+        datasets: [
+          {
+            label: "Rented",
+            data: rentedData.reverse(),
+            borderColor: "#4caf50",
+            backgroundColor: "rgba(76, 175, 80, 0.2)",
+            fill: true,
+            tension: 0.3
+          },
+          {
+            label: "Returned",
+            data: returnedData.reverse(),
+            borderColor: "#2196f3",
+            backgroundColor: "rgba(33, 150, 243, 0.2)",
+            fill: true,
+            tension: 0.3
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'top' }
+        },
+        scales: {
+          y: { beginAtZero: true },
+          x: { ticks: { autoSkip: false } }
+        }
+      }
+    });
+
+  } catch (err) {
+    console.error("Failed to load reports:", err);
+    alert("Failed to load reports. Check console for errors.");
+  }
+}
+
+document.getElementById("logoutBtn").onclick = () => {
+  localStorage.removeItem("loggedInUser");
+  window.location.href = "login.html";
+};
+
+loadReports();
+</script>
+
+</body>
+</html>
