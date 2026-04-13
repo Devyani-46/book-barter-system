@@ -1,0 +1,209 @@
+/* Layout */
+body {
+  display: flex;
+  margin: 0;
+  font-family: Arial, sans-serif;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 220px;
+  background-color: #1e1e2f;
+  min-height: 100vh;
+  padding: 20px;
+  color: white;
+}
+
+.sidebar .logo {
+  font-size: 1.5em;
+  font-weight: bold;
+  margin-bottom: 30px;
+}
+
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+}
+
+.sidebar ul li {
+  margin: 15px 0;
+}
+
+.sidebar ul li a {
+  color: white;
+  text-decoration: none;
+  display: block;
+  padding: 10px 15px;
+  border-radius: 5px;
+  margin: 15px 0;
+}
+
+.sidebar ul li a.active {
+  background-color: #333;
+}
+
+/* Main container */
+main.container {
+  flex: 1;
+  padding: 20px;
+  background-color: #f9f9f9;
+}
+
+/* Header */
+.header {
+  margin-bottom: 20px;
+}
+
+.header h1 {
+  margin-bottom: 5px;
+  font-size: 22px;
+}
+
+.header p {
+  color: #555;
+}
+
+/* Profile Grid */
+.profile-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
+}
+
+/* Profile Card */
+.profile-card {
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  margin-bottom: 20px;
+}
+
+.profile-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin: 15px 0;
+}
+
+.avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #eee;
+  border: 2px solid #ccc;
+}
+.logo-img{
+  border-radius: 50%;
+}
+
+.bio {
+  margin: 8px 0;
+  font-size: 0.9em;
+  color: #555;
+}
+
+.rating {
+  font-size: 0.9em;
+  color: #444;
+}
+
+.edit-btn {
+  padding: 8px 15px;
+  border: none;
+  background-color: #1e1e2f;
+  color: white;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.edit-btn:hover {
+  background-color: #333;
+}
+
+/* Edit Form */
+#editForm form {
+  display: flex;
+  flex-direction: column;
+}
+
+#editForm label {
+  margin-top: 10px;
+  font-weight: bold;
+}
+
+#editForm input,
+#editForm textarea {
+  margin-top: 5px;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+#editForm textarea {
+  resize: none;
+}
+
+#editForm button {
+  margin-top: 15px;
+  background: #1e1e2f;
+  color: white;
+  padding: 10px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+#editForm button:hover {
+  background: #333;
+}
+
+/* Stats Card */
+.stats-card {
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  margin-bottom: 20px;
+}
+
+.stats-card ul {
+  list-style: none;
+  padding: 0;
+}
+
+.stats-card li {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.stats-card li:last-child {
+  border-bottom: none;
+}
+
+/* Quick Actions */
+.quick-actions {
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.quick-actions button {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  margin-top: 10px;
+  border: 1px solid #1e1e2f;
+  border-radius: 6px;
+  background-color: white;
+  cursor: pointer;
+}
+
+.quick-actions button:hover {
+  background-color: #1e1e2f;
+  color: white;
+}

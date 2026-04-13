@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Books - Book Barter</title>
+  <link rel="stylesheet" href="transactions.css">
+
+  <style>
+    .book-card {
+      background: #fff;
+      padding: 10px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      text-align: center;
+      transition: 0.3s;
+    }
+    .book-card:hover {
+      transform: scale(1.03);
+    }
+    .book-img {
+      width: 100px;
+      height: 140px;
+      object-fit: cover;
+      border-radius: 5px;
+      margin-bottom: 10px;
+    }
+    .filter-btn.active {
+      background-color: #1e1e2f;
+      color: white;
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <img src="logo image.jpg" alt="Book Barter Logo" class="logo-img" style="width:40px; vertical-align:middle;">
+    <span style="margin-left:8px;">Book Barter</span>
+  <nav>
+    <ul>
+      <li><a href="dashboard.html">Dashboard</a></li>
+      <li><a href="mybook.html">My Books</a></li>
+      <li><a href="transactions.html" class="active">Records</a></li>
+      <li><a href="message.html">Chat</a></li>
+      <li><a href="profile.html">Profile</a></li>
+      <li id="logoutBtn">Logout</li>
+    </ul>
+  </nav>
+</aside>
+
+<!-- Main -->
+<main class="container">
+
+<header class="header">
+  <div>
+    <h1>My Book Records...</h1>
+    <p>Analyzing your data or records.</p>
+  </div>
+</header>
+
+<!-- Stats -->
+<section class="stats">
+  <div class="card">
+    <span>Total Books</span>
+    <h2 id="totalBooks">0</h2>
+  </div>
+  <div class="card">
+    <span>Available</span>
+    <h2 id="availableBooks">0</h2>
+  </div>
+  <div class="card">
+    <span>Currently Lent</span>
+    <h2 id="lentBooks">0</h2>
+  </div>
+</section>
+
+<!-- Search & Filters -->
+<section class="search-filters">
+  <input type="text" id="searchInput" placeholder="Search your books...">
+  <div class="filters">
+    <button class="filter-btn active" data-filter="all">All Books</button>
+    <button class="filter-btn" data-filter="available">Available</button>
+    <button class="filter-btn" data-filter="lent">Currently Lent</button>
+  </div>
+</section>
+
+<!-- Books -->
+<section class="book-grid" id="bookGrid"></section>
+
+</main>
+
+<script>
+/* ================= AUTH ================= */
+const user = JSON.parse(localStorage.getItem("loggedInUser"));
+if (!user) {
+  alert("Please login again");
+  window.location.href = "login.html";
+}
+
+document.getElementById("logoutBtn").onclick = () => {
+  localStorage.clear();
+  window.location.href = "login.html";
+};
+
+/* ================= VARIABLES ================= */
+const bookGrid = document.getElementById("bookGrid");
+const totalBooksEl = document.getElementById("totalBooks");
+const availableBooksEl = document.getElementById("availableBooks");
+const lentBooksEl = document.getElementById("lentBooks");
+
+const searchInput = document.getElementById("searchInput");
+const filterButtons = document.querySelectorAll(".filter-btn");
+
+let allTransactions = [];
+let currentFilter = "all";
+
+/* ================= LOAD TRANSACTIONS ================= */
+async function loadTransactions() {
+  const res = await fetch(`http://localhost:3000/records/${user._id}`);
+  allTransactions = await res.json();
+
+  if (!allTransactions.length) {
+    bookGrid.innerHTML = "<p>No books found.</p>";
+    totalBooksEl.textContent = 0;
+    availableBooksEl.textContent = 0;
+    lentBooksEl.textContent = 0;
+    return;
+  }
+
+  renderTransactions();
+}
+
+
+/* ================= STATS LOGIC ================= */
+function updateStats(books) {
+  const total = books.length;
+  const available = books.filter(b => b.status === "AVAILABLE").length;
+  const lent = books.filter(b => b.status === "RENTED").length;
+
+  totalBooksEl.textContent = total;
+  availableBooksEl.textContent = available;
+  lentBooksEl.textContent = lent;
+}
+
+
+/* ================= RENDER ================= */
+function renderTransactions() {
+  let filtered = [...allTransactions];
+
+  if (currentFilter === "available") {
+    filtered = filtered.filter(b => b.status === "AVAILABLE");
+  } else if (currentFilter === "lent") {
+    filtered = filtered.filter(b => b.status === "RENTED");
+  }
+
+  const search = searchInput.value.toLowerCase();
+  if (search) {
+    filtered = filtered.filter(b =>
+      b.title?.toLowerCase().includes(search)
+    );
+  }
+
+  bookGrid.innerHTML = filtered.map(b => `
+    <div class="book-card">
+      <img src="${b.coverImage || 'https://via.placeholder.com/100x140'}"
+           class="book-img">
+      <h3>${b.title}</h3>
+      <p><strong>${b.status}</strong></p>
+    </div>
+  `).join("");
+
+  updateStats(allTransactions);
+}
+
+
+/* ================= EVENTS ================= */
+searchInput.addEventListener("input", renderTransactions);
+
+filterButtons.forEach(btn => {
+  btn.addEventListener("click", () => {
+    filterButtons.forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+
+    currentFilter = btn.dataset.filter;
+    renderTransactions();
+  });
+});
+
+/* ================= INIT ================= */
+loadTransactions();
+</script>
+
+</body>
+</html>

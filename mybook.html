@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Books - Book Barter</title>
+  <link rel="stylesheet" href="mybook.css">
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <img src="logo image.jpg" alt="Book Barter Logo" class="logo-img" style="width:40px; vertical-align:middle;">
+    <span style="margin-left:8px;">Book Barter</span>
+    <nav>
+      <ul>
+        <li><a href="dashboard.html">Dashboard</a></li>
+        <li><a href="mybook.html" class="active">My Books</a></li>
+        <li><a href="transactions.html">Records</a></li>
+        <li><a href="message.html">Chat</a></li>
+        <li><a href="profile.html">Profile</a></li>
+        <li id="logoutBtn">Logout</li>
+      </ul>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="container">
+    <header class="header">
+      <div>
+        <h1>My Books...</h1>
+        <p>Manage your personal book collection</p>
+      </div>
+      <a href="add-book.html" class="add-btn" style="text-decoration: none;">+ Add New Book</a>
+    </header>
+
+    <section id="bookList" class="book-grid">
+      <!-- Books will appear here -->
+    </section>
+  </main>
+
+<script>
+const bookList = document.getElementById("bookList");
+const user = JSON.parse(localStorage.getItem("loggedInUser"));
+
+if (!user) {
+  alert("Please login first");
+  window.location.href = "login.html";
+}
+
+document.getElementById("logoutBtn").onclick = () => {
+  localStorage.clear();
+  window.location.href = "login.html";
+};
+
+async function loadBooks() {
+  const res = await fetch(`http://localhost:3000/my-books/${user._id}`);
+  const books = await res.json();
+
+  bookList.innerHTML = "";
+
+  if (books.length === 0) {
+    bookList.innerHTML = "<p>No books added yet.</p>";
+    return;
+  }
+
+  books.forEach(book => {
+    bookList.innerHTML += `
+      <div class="book-card">
+        <img
+  src="${book.coverImage && book.coverImage.startsWith('data:image')
+    ? book.coverImage
+    : 'default-cover.png'}"
+  style="width:120px; height:160px; object-fit:cover"
+/>
+
+
+        <h3>${book.title}</h3>
+        <p><b>Author:</b> ${book.author}</p>
+        <p><b>Genre:</b> ${book.genre}</p>
+        <p><b>Condition:</b> ${book.condition}</p>
+        <p>
+  <b>Status:</b>
+  <span style="color:${book.status === 'RENTED' ? 'red' : 'green'}">
+    ${book.status}
+  </span>
+</p>
+
+
+        <button onclick="editBook('${book._id}')">Edit</button>
+        <button onclick="deleteBook('${book._id}')">Delete</button>
+      </div>
+    `;
+  });
+}
+
+function editBook(bookId) {
+  localStorage.setItem("editBookId", bookId);
+  window.location.href = "edit-book.html";
+}
+
+async function deleteBook(bookId) {
+  if (!confirm("Delete this book?")) return;
+
+  await fetch(`http://localhost:3000/delete-book/${bookId}`, {
+    method: "DELETE"
+  });
+
+  loadBooks();
+}
+
+loadBooks();
+</script>
+
+
+
+</body>
+</html>

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profile - Book Barter</title>
+  <link rel="stylesheet" href="profile.css">
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <img src="logo image.jpg" alt="Book Barter Logo" class="logo-img" style="width:40px; vertical-align:middle;">
+    <span style="margin-left:8px;">Book Barter</span>
+    <nav>
+      <ul>
+        <li><a href="dashboard.html">Dashboard</a></li>
+        <li><a href="mybook.html">My Books</a></li>
+        <li><a href="transactions.html">Records</a></li>
+        <li><a href="message.html">Chat</a></li>
+        <li><a href="profile.html" class="active">Profile</a></li>
+        <li id="logoutBtn">Logout</li>
+      </ul>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="container">
+    <header class="header">
+      <h1 style="font-size: 2em;">My Profile...</h1>
+      <p>Manage your account</p>
+    </header>
+
+    <section class="profile-grid">
+      <!-- Profile Info -->
+      <div class="profile-card">
+        <h2>Profile Information</h2>
+        <div class="profile-info">
+          <div style="position: relative; display: inline-block;">
+            <img src="default-avatar.png" alt="User Avatar" class="avatar" id="profileAvatar" style="cursor:pointer;">
+            <button id="deleteAvatarBtn" style="display:none; position:absolute; bottom:-10px; left:50%; transform:translateX(-50%); background:#dc3545; color:white; border:none; padding:4px 8px; border-radius:5px; font-size:12px; cursor:pointer;">
+              Delete
+            </button>
+          </div>
+          <div>
+            <h3 id="profileName">Sakshi Pawar</h3>
+            <p id="profileEmail">sakshipawar1242004@gmail.com</p>
+            <p class="bio" id="profileBio">This is my description...</p>
+            <p class="rating">⭐ <strong>--</strong> rating</p>
+          </div>
+        </div>
+        <button class="edit-btn" id="editBtn">Edit</button>
+
+        <!-- Hidden Edit Form -->
+        <div id="editForm" style="display:none; margin-top:15px;">
+          <form>
+            <label>Change Avatar</label>
+            <input type="file" id="avatarInput" accept="image/*">
+
+            <label>Full Name</label>
+            <input type="text" id="editName">
+
+            <label>Email (cannot change)</label>
+            <input type="email" id="editEmail" disabled>
+
+            <label>Description</label>
+            <textarea id="editBio" rows="3"></textarea>
+
+            <button type="button" id="saveBtn">Save Changes</button>
+            <button type="button" id="cancelBtn" style="background:#ccc; margin-left:10px;">Cancel</button>
+          </form>
+        </div>
+      </div>
+    </section>
+  </main>
+
+<script>
+const loggedInUser = JSON.parse(localStorage.getItem("loggedInUser"));
+
+if (!loggedInUser) {
+  alert("Please log in first");
+  window.location.href = "login.html";
+}
+
+const userId = loggedInUser._id;
+
+// Elements
+const profileName = document.getElementById("profileName");
+const profileEmail = document.getElementById("profileEmail");
+const profileBio = document.getElementById("profileBio");
+const profileAvatar = document.getElementById("profileAvatar");
+
+const editBtn = document.getElementById("editBtn");
+const editForm = document.getElementById("editForm");
+const editName = document.getElementById("editName");
+const editEmail = document.getElementById("editEmail");
+const editBio = document.getElementById("editBio");
+const avatarInput = document.getElementById("avatarInput");
+
+// 🔹 Load profile from DB
+async function loadProfile() {
+  const res = await fetch(`http://localhost:3000/user/${userId}`);
+  const user = await res.json();
+
+  profileName.textContent = user.fullname || user.name;
+  profileEmail.textContent = user.email;
+  profileBio.textContent = user.bio || "This is my description...";
+  profileAvatar.src = user.avatar || "default-avatar.png";
+
+  editName.value = user.fullname || user.name;
+  editEmail.value = user.email;
+  editBio.value = user.bio || "";
+}
+
+loadProfile();
+
+// 🔹 Edit
+editBtn.addEventListener("click", () => {
+  editForm.style.display = "block";
+});
+
+// 🔹 Save
+document.getElementById("saveBtn").addEventListener("click", async () => {
+  let avatarBase64 = "";
+
+  if (avatarInput.files[0]) {
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      avatarBase64 = e.target.result;
+      await updateProfile(avatarBase64);
+    };
+    reader.readAsDataURL(avatarInput.files[0]);
+  } else {
+    await updateProfile("");
+  }
+});
+
+async function updateProfile(avatar) {
+  const body = {
+    fullname: editName.value.trim(),
+    bio: editBio.value.trim()
+  };
+
+  if (avatar) body.avatar = avatar;
+
+  await fetch(`http://localhost:3000/user/${userId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+
+  // 🔹 Sync updated user
+  const refreshed = await fetch(`http://localhost:3000/user/${userId}`);
+  const freshUser = await refreshed.json();
+  localStorage.setItem("loggedInUser", JSON.stringify(freshUser));
+
+  alert("Profile updated!");
+  editForm.style.display = "none";
+  loadProfile();
+}
+
+// 🔹 Logout
+document.getElementById("logoutBtn").addEventListener("click", () => {
+  localStorage.removeItem("loggedInUser");
+  window.location.href = "login.html";
+});
+</script>
+
+
+</body>
+</html>

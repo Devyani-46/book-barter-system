@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Dashboard</title>
+
+<!-- Font Awesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- Custom CSS -->
+<link rel="stylesheet" href="admin-dashboard.css">
+
+<style>
+  /* --- Main content styling --- */
+  .main {
+    flex: 1;
+    padding: 40px;
+    background-color: #f4f6f8;
+  }
+
+  .main h1 {
+    font-size: 2rem;
+    margin-bottom: 30px;
+  }
+
+  /* Stats cards */
+  .stats {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 50px;
+  }
+
+  .stats div {
+    background-color: #fff;
+    padding: 30px 40px;
+    border-radius: 12px;
+    box-shadow: 0px 4px 12px rgba(0,0,0,0.1);
+    font-size: 1.2rem;
+    flex: 1 1 200px;
+    text-align: center;
+    transition: transform 0.3s, box-shadow 0.3s;
+    animation: fadeIn 0.6s ease forwards;
+    opacity: 0;
+  }
+
+  .stats div:nth-child(1) { animation-delay: 0.2s; }
+  .stats div:nth-child(2) { animation-delay: 0.4s; }
+
+  .stats div:hover {
+    transform: translateY(-5px);
+    box-shadow: 0px 8px 20px rgba(0,0,0,0.15);
+  }
+
+  /* Pie Chart */
+  .chart-container {
+    width: 400px;
+    max-width: 90%;
+    margin: auto;
+    background-color: #fff;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0px 4px 12px rgba(0,0,0,0.1);
+    animation: fadeIn 0.8s ease forwards;
+    opacity: 0;
+  }
+
+  /* Fade-in animation */
+  @keyframes fadeIn {
+    to { opacity: 1; }
+  }
+
+  /* Responsive */
+  @media(max-width: 768px) {
+    .stats { flex-direction: column; }
+    .chart-container { width: 100%; }
+  }
+</style>
+
+</head>
+<body>
+
+  <!-- Sidebar remains unchanged -->
+  <aside class="sidebar">
+    <img src="logo image.jpg" alt="Book Barter Logo" class="logo-img" style="width:40px; vertical-align:middle;">
+    <span style="margin-left:8px;">Book Barter Admin</span>
+    <nav>
+      <ul>
+        <li><a href="admin-dashboard.html" class="active">Dashboard</a></li>
+        <li><a href="admin-users.html">Users</a></li>
+        <li><a href="admin-books.html">All Books</a></li>
+        <li><a href="admin-reports.html">Reports</a></li>
+        <li id="logoutBtn" class="logout-link">Logout</li>
+      </ul>
+    </nav>
+  </aside>
+
+  <!-- Main content -->
+  <div class="main">
+    <h1>Admin Dashboard</h1>
+
+    <!-- Stats Cards -->
+    <div class="stats">
+      <div>
+        <i class="fa fa-users" style="font-size:2rem; color:#3b82f6;"></i>
+        <div>Total Users: <span id="userCount">0</span></div>
+      </div>
+      <div>
+        <i class="fa fa-book" style="font-size:2rem; color:#f59e0b;"></i>
+        <div>Total Books: <span id="bookCount">0</span></div>
+      </div>
+    </div>
+
+    <!-- Pie Chart -->
+    <div class="chart-container">
+      <canvas id="pieChart"></canvas>
+    </div>
+  </div>
+
+  <script>
+  // 🔐 Admin auth check
+  if (localStorage.getItem("adminLoggedIn") !== "true") {
+    window.location.href = "admin-login.html";
+  }
+
+  const userCountEl = document.getElementById("userCount");
+  const bookCountEl = document.getElementById("bookCount");
+  let pieChart;
+
+  // 📊 Load dashboard data from MongoDB
+  async function loadDashboard() {
+    try {
+      const res = await fetch("http://localhost:3000/api/admin/stats");
+      const data = await res.json();
+
+      userCountEl.innerText = data.users;
+      bookCountEl.innerText = data.books;
+
+      loadChart(data.users, data.books);
+    } catch (err) {
+      console.error("Failed to load dashboard data", err);
+    }
+  }
+
+  // 🥧 Pie chart
+  function loadChart(users, books) {
+    const ctx = document.getElementById("pieChart").getContext("2d");
+
+    pieChart = new Chart(ctx, {
+      type: "pie",
+      data: {
+        labels: ["Users", "Books"],
+        datasets: [{
+          data: [users, books],
+          backgroundColor: ["#3b82f6", "#f59e0b"],
+          borderColor: ["#ffffff", "#ffffff"],
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            position: "bottom",
+            labels: { font: { size: 16 } }
+          }
+        }
+      }
+    });
+  }
+
+  // 🚪 Logout
+  document.getElementById("logoutBtn").onclick = () => {
+  localStorage.removeItem("loggedInUser");
+  window.location.href = "login.html";
+};
+
+  // 🚀 Init
+  loadDashboard();
+</script>
+
+</body>
+</html>
