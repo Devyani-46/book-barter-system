@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Admin Books</title>
+<link rel="stylesheet" href="admin-dashboard.css">
+</head>
+
+<style>
+.main h1 {
+  margin-bottom: 20px;
+  color: #1e1e2f;
+}
+
+#searchBook {
+  width: 400px;
+  padding: 10px 15px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  margin-bottom: 20px;
+  font-size: 16px;
+}
+
+#booksTable {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+#booksTable th, #booksTable td {
+  padding: 12px 15px;
+}
+
+#booksTable th {
+  background: #1e1e2f;
+  color: white;
+}
+
+#booksTable tr:nth-child(even) {
+  background: #f7f7f7;
+}
+
+button {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+}
+
+.delete-btn {
+  background: #f44336;
+  color: white;
+}
+</style>
+
+<body>
+
+<!-- ✅ ADMIN AUTH (FIXED) -->
+<script>
+const adminUser = JSON.parse(localStorage.getItem("loggedInUser"));
+if (!adminUser || adminUser.role !== "admin") {
+  window.location.href = "admin-login.html";
+}
+</script>
+
+<aside class="sidebar">
+  <img src="logo image.jpg" class="logo-img" style="width:40px;">
+  <span>Book Barter Admin</span>
+  <nav>
+    <ul>
+      <li><a href="admin-dashboard.html">Dashboard</a></li>
+      <li><a href="admin-users.html">Users</a></li>
+      <li><a href="admin-books.html" class="active">All Books</a></li>
+      <li><a href="admin-reports.html">Reports</a></li>
+      <li id="logoutBtn">Logout</li>
+    </ul>
+  </nav>
+</aside>
+
+<div class="main">
+  <h1>Manage Books</h1>
+
+  <input type="text" id="searchBook" placeholder="Search books...">
+
+  <table id="booksTable">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Title</th>
+        <th>Author</th>
+        <th>Genre</th>
+        <th>Status</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<script>
+const tbody = document.querySelector("#booksTable tbody");
+let allBooks = [];
+
+/* ✅ LOAD ALL BOOKS FROM DB */
+async function loadBooks() {
+  try {
+    const res = await fetch("http://localhost:3000/api/admin/books");
+    const books = await res.json();
+    allBooks = books;
+    renderBooks(books);
+  } catch (err) {
+    alert("Failed to load books");
+    console.error(err);
+  }
+}
+
+/* ✅ RENDER TABLE */
+function renderBooks(books) {
+  tbody.innerHTML = "";
+  books.forEach(b => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${b._id}</td>
+      <td>${b.title}</td>
+      <td>${b.author}</td>
+      <td>${b.genre || "-"}</td>
+      <td>${b.status}</td>
+      <td>
+        <button class="delete-btn" onclick="deleteBook('${b._id}')">Delete</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+/* ✅ SEARCH */
+document.getElementById("searchBook").addEventListener("input", function () {
+  const term = this.value.toLowerCase();
+  renderBooks(
+    allBooks.filter(b =>
+      b.title.toLowerCase().includes(term) ||
+      b.author.toLowerCase().includes(term) ||
+      (b.genre || "").toLowerCase().includes(term)
+    )
+  );
+});
+
+/* ✅ DELETE BOOK */
+async function deleteBook(id) {
+  if (!confirm("Delete this book?")) return;
+
+  await fetch(`http://localhost:3000/api/admin/books/${id}`, {
+    method: "DELETE"
+  });
+
+  loadBooks();
+}
+
+/* ✅ LOGOUT */
+document.getElementById("logoutBtn").onclick = () => {
+  localStorage.removeItem("loggedInUser");
+  window.location.href = "login.html";
+};
+
+loadBooks();
+</script>
+
+</body>
+</html>

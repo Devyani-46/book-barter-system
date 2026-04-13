@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Admin Users</title>
+  <link rel="stylesheet" href="admin-dashboard.css">
+</head>
+
+<style>
+.main h1 {
+  margin-bottom: 20px;
+  color: #1e1e2f;
+}
+
+#usersTable {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+#usersTable th, #usersTable td {
+  padding: 12px 15px;
+}
+
+#usersTable th {
+  background: #1e1e2f;
+  color: white;
+}
+
+#usersTable tr:nth-child(even) {
+  background: #f7f7f7;
+}
+
+button {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+}
+
+.delete-btn {
+  background: #f44336;
+  color: white;
+}
+</style>
+
+<body>
+
+<aside class="sidebar">
+  <img src="logo image.jpg" class="logo-img" style="width:40px;">
+  <span>Book Barter Admin</span>
+  <nav>
+    <ul>
+      <li><a href="admin-dashboard.html">Dashboard</a></li>
+      <li><a href="admin-users.html" class="active">Users</a></li>
+      <li><a href="admin-books.html">All Books</a></li>
+      <li><a href="admin-reports.html">Reports</a></li>
+      <li id="logoutBtn" style="cursor:pointer;">Logout</li>
+    </ul>
+  </nav>
+</aside>
+
+<div class="main">
+  <h1>Manage Users</h1>
+
+  <table id="usersTable">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Role</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<script>
+/* ================= ADMIN AUTH CHECK (MATCHES USER DASHBOARD) ================= */
+const adminUser = JSON.parse(localStorage.getItem("loggedInUser"));
+if (!adminUser || adminUser.role !== "admin") {
+  window.location.replace("admin-login.html");
+}
+
+/* ================= LOAD USERS ================= */
+const tbody = document.querySelector("#usersTable tbody");
+
+async function loadUsers() {
+  try {
+    const res = await fetch("http://localhost:3000/api/admin/users");
+    const users = await res.json();
+
+    tbody.innerHTML = "";
+
+    users.forEach(u => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${u._id}</td>
+        <td>${u.name || u.fullname || "-"}</td>
+        <td>${u.email}</td>
+        <td>${u.role}</td>
+        <td>
+          <button class="delete-btn" onclick="deleteUser('${u._id}')">Delete</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  } catch (err) {
+    alert("Failed to load users");
+    console.error(err);
+  }
+}
+
+/* ================= DELETE USER ================= */
+async function deleteUser(id) {
+  if (!confirm("Delete user?")) return;
+
+  try {
+    const res = await fetch(`http://localhost:3000/api/admin/users/${id}`, {
+      method: "DELETE"
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(data.message || "Delete failed");
+      return;
+    }
+
+    alert("User deleted successfully");
+    loadUsers();
+  } catch (err) {
+    console.error(err);
+    alert("Error deleting user");
+  }
+}
+
+/* ================= LOGOUT (EXACT SAME AS USER DASHBOARD) ================= */
+document.getElementById("logoutBtn").onclick = () => {
+  localStorage.removeItem("loggedInUser");
+  window.location.href = "login.html";
+};
+
+loadUsers();
+</script>
+
+</body>
+</html>

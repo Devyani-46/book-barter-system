@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Book Barter</title>
+  <link rel="stylesheet" href="login.css">
+</head>
+<body>
+  <div class="auth-container">
+    <div class="auth-box">
+      <h1>Welcome Back</h1>
+      <p class="subtitle">Sign in to continue </p>
+
+      <form id="loginForm">
+        <label>Email address</label>
+        <input type="email" id="loginEmail" placeholder="Enter your email" required>
+
+        <label>Password</label>
+        <input type="password" id="loginPassword" placeholder="Enter your password" required>
+
+        <button type="submit" class="btn">Sign In</button>
+      </form>
+
+      <p class="small">
+        Don't have an account? <a href="register.html">Create one here</a>
+      </p>
+      <p class="small"><a href="index.html">← Back to home</a></p>
+    </div>
+  </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const loginForm = document.getElementById("loginForm");
+
+  loginForm.addEventListener("submit", async function (e) {
+    e.preventDefault();
+
+    const email = loginEmail.value.trim();
+    const password = loginPassword.value;
+
+    const response = await fetch("https://book-barter-backend.onrender.com/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password })
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+      // ✅ ONLY FIX
+      localStorage.setItem("loggedInUser", JSON.stringify(data.user));
+
+      if (data.user.role === "admin") {
+        localStorage.setItem("adminLoggedIn", "true");
+        window.location.href = "admin-dashboard.html";
+      } else {
+        window.location.href = "dashboard.html";
+      }
+    } else {
+      alert("Invalid email or password");
+    }
+  });
+});
+</script>
+
+</body>
+</html>

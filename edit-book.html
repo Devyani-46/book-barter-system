@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Edit Book</title>
+</head>
+<body>
+
+<h2>Edit Book</h2>
+
+<form id="editBookForm">
+
+  <label>Book Condition</label><br>
+  <select id="condition" required>
+    <option value="New">New</option>
+    <option value="Like New">Like New</option>
+    <option value="Used">Used</option>
+    <option value="Old">Old</option>
+  </select>
+  <br><br>
+
+  <label>Status</label>
+<select id="status" required>
+  <option value="AVAILABLE">Available</option>
+  <option value="RENTED">Rented</option>
+</select>
+
+  <br><br>
+
+  <button type="submit">Update Book</button>
+</form>
+
+<script>
+const bookId = localStorage.getItem("editBookId");
+
+// ✅ Load existing book data
+async function loadBook() {
+  const res = await fetch(`http://localhost:3000/book/${bookId}`);
+  const book = await res.json();
+
+  document.getElementById("condition").value = book.condition;
+  document.getElementById("status").value = book.status;
+}
+
+document.getElementById("editBookForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const updatedBook = {
+    condition: document.getElementById("condition").value,
+    status: document.getElementById("status").value
+  };
+
+  await fetch(`http://localhost:3000/update-book/${bookId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(updatedBook)
+  });
+
+  alert("✅ Book updated successfully");
+  window.location.href = "mybook.html";
+});
+
+
+loadBook();
+</script>
+
+</body>
+</html>
