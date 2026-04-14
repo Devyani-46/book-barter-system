@@ -7,23 +7,41 @@ const User = require("./models/User");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
+/* ================= CORS FIX ================= */
+app.use(cors({
+  origin: [
+    "http://localhost:5500",
+    "http://127.0.0.1:5500",
+    "https://book-barter-system.vercel.app/" // 🔥 REPLACE THIS
+  ],
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true
+}));
+
+/* ================= MIDDLEWARE ================= */
 app.use(express.json());
 
-// MongoDB
+/* ================= MONGODB ================= */
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB Connected"))
-  .catch(err => console.error(err));
+  .catch(err => {
+    console.error("❌ Mongo Error:", err);
+  });
 
-// Test route
+/* ================= TEST ROUTE ================= */
 app.get("/", (req, res) => {
   res.send("✅ Book Barter Backend Running");
 });
 
-// Register
+/* ================= REGISTER ================= */
 app.post("/register", async (req, res) => {
   try {
     const { name, email, password } = req.body;
+
+    // Validation
+    if (!name || !email || !password) {
+      return res.json({ success: false, message: "All fields required" });
+    }
 
     const exists = await User.findOne({ email });
     if (exists) {
@@ -33,12 +51,14 @@ app.post("/register", async (req, res) => {
     const user = await User.create({ name, email, password });
 
     res.json({ success: true, user });
+
   } catch (err) {
-    res.status(500).json({ success: false });
+    console.error("REGISTER ERROR:", err);
+    res.status(500).json({ success: false, message: err.message });
   }
 });
 
-// Login
+/* ================= LOGIN ================= */
 app.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -49,12 +69,23 @@ app.post("/login", async (req, res) => {
       return res.json({ success: false, message: "Invalid credentials" });
     }
 
-    res.json({ success: true, user });
-  } catch {
-    res.status(500).json({ success: false });
+    res.json({
+      success: true,
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      }
+    });
+
+  } catch (err) {
+    console.error("LOGIN ERROR:", err);
+    res.status(500).json({ success: false, message: err.message });
   }
 });
 
+/* ================= START ================= */
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
